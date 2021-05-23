@@ -14,6 +14,7 @@ Draw::Draw(HINSTANCE hInstance, WNDPROC wndProc, LPVOID lpParam, int iWidth, int
 
     registerWindow();
     createD2D();
+    createWICImagingFactory();
 }
 
 void Draw::registerWindow() {
@@ -59,6 +60,16 @@ void Draw::createD2D() {
         D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_IGNORE)),
         D2D1::HwndRenderTargetProperties(this->hWnd, D2D1::SizeU(rect.right - rect.left, rect.bottom - rect.top)),
         &pRenderTarget
+    );
+}
+
+void Draw::createWICImagingFactory() {
+    HRESULT hr = CoCreateInstance(
+        CLSID_WICImagingFactory,
+        NULL,
+        CLSCTX_INPROC_SERVER,
+        IID_IWICImagingFactory,
+        (LPVOID*)&pWICImagingFactory
     );
 }
 
@@ -127,4 +138,120 @@ void Draw::drawFilledTriangle(FVector2D pt1, FVector2D pt2, FVector2D pt3, ID2D1
     pRenderTarget->FillGeometry(pGeometry, pBrush);
 
     pGeometry->Release();
+}
+
+void Draw::drawFilledRectangle(FVector2D pt1, FVector2D pt2, ID2D1SolidColorBrush* pBrush) {
+    ID2D1PathGeometry* pGeometry;
+    ID2D1GeometrySink* pSink;
+
+    pD2DFactory->CreatePathGeometry(&pGeometry);
+    pGeometry->Open(&pSink);
+
+    pSink->SetFillMode(D2D1_FILL_MODE_WINDING);
+    pSink->BeginFigure(D2D1::Point2F(pt1.X, pt1.Y), D2D1_FIGURE_BEGIN_FILLED);
+    pSink->AddLine(D2D1::Point2F(pt2.X, pt1.Y));
+    pSink->AddLine(D2D1::Point2F(pt2.X, pt2.Y));
+    pSink->AddLine(D2D1::Point2F(pt1.X, pt2.Y));
+
+    pSink->EndFigure(D2D1_FIGURE_END_CLOSED);
+
+    pSink->Close();
+    pSink->Release();
+
+    pRenderTarget->DrawGeometry(pGeometry, pBrush);
+    pRenderTarget->FillGeometry(pGeometry, pBrush);
+
+    pGeometry->Release();
+}
+
+ID2D1Bitmap* Draw::loadBitmapFromFile(PCWSTR path) {
+    IWICBitmapDecoder* pDecoder = NULL;
+    IWICBitmapFrameDecode* pSource = NULL;
+    IWICStream* pStream = NULL;
+    IWICFormatConverter* pConverter = NULL;
+    IWICBitmapScaler* pScaler = NULL;
+    ID2D1Bitmap* ppBitmap = NULL;
+
+    std::cout << "Loading Image" << std::endl;
+
+    HRESULT hr = pWICImagingFactory->CreateDecoderFromFilename(
+        path,
+        NULL,
+        GENERIC_READ,
+        WICDecodeMetadataCacheOnLoad,
+        &pDecoder
+    );
+
+    if (SUCCEEDED(hr)) {
+        hr = pDecoder->GetFrame(0, &pSource);
+    }
+
+    std::cout << "Decoder created" << std::endl;
+
+    if (SUCCEEDED(hr)) {
+        hr = pWICImagingFactory->CreateFormatConverter(&pConverter);
+    }
+
+    std::cout << "Format converter created" << std::endl;
+
+    if (SUCCEEDED(hr)) {
+        hr = pConverter->Initialize(
+            pSource,
+            GUID_WICPixelFormat32bppPBGRA,
+            WICBitmapDitherTypeNone,
+            NULL,
+            0.f,
+            WICBitmapPaletteTypeMedianCut
+        );
+    }
+
+    std::cout << "Converter created" << std::endl;
+
+    if (SUCCEEDED(hr)) {
+        hr = pRenderTarget->CreateBitmapFromWicBitmap(
+            pConverter,
+            NULL,
+            &ppBitmap
+        );
+    }
+
+    std::cout << "Bitmap created" << std::endl;
+
+    SafeRelease(&pDecoder);
+    SafeRelease(&pSource);
+    SafeRelease(&pStream);
+    SafeRelease(&pConverter);
+    SafeRelease(&pScaler);
+
+    return ppBitmap;
+}
+
+void Draw::drawBitmap(ID2D1Bitmap* pBitmap, FVector2D pt1) {
+    
+    auto bitmapSize = pBitmap->GetSize();
+    
+    pRenderTarget->DrawBitmap(
+        pBitmap,
+        D2D1::RectF(
+            pt1.X,
+            pt1.Y,
+            pt1.X + bitmapSize.width,
+            pt1.Y + bitmapSize.height
+        )
+    );
+}
+
+void Draw::drawBitmapPart(ID2D1Bitmap* pBitmap, FVector2D pt1, FVector2D size, D2D1_RECT_F rect) {
+    pRenderTarget->DrawBitmap(
+        pBitmap,
+        D2D1::RectF(
+            pt1.X,
+            pt1.Y,
+            pt1.X + size.X,
+            pt1.Y + size.Y
+        ),
+        1.0f,
+        D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+        rect
+    );
 }

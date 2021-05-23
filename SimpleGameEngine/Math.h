@@ -1,6 +1,7 @@
 #pragma once
 #include <math.h>
 #include <string.h>
+#include <iostream>
 
 struct FVector3D;
 
@@ -111,6 +112,12 @@ struct FVector2D {
     FVector2D(FVector2D const&) = default;
     FVector2D(float x, float y) : X(x), Y(y) {}
 
+    friend std::ostream& operator<< (std::ostream& os, const FVector2D& v) {
+        os << "X: " << v.X << " Y: " << v.Y;
+
+        return os;
+    }
+
     FVector2D operator-(const FVector2D& rhs) {
         return FVector2D(X - rhs.X, Y - rhs.Y);
     }
@@ -126,6 +133,10 @@ struct FVector2D {
         return FVector2D(X + rhs.X, Y + rhs.Y);
     }
 
+    const FVector2D operator+(const FVector2D& rhs) const {
+        return FVector2D(X + rhs.X, Y + rhs.Y);
+    }
+
     FVector2D operator+=(const FVector2D& rhs) {
         X += rhs.X;
         Y += rhs.Y;
@@ -135,6 +146,18 @@ struct FVector2D {
 
     FVector2D operator*(const float& rhs) {
         return FVector2D(X * rhs, Y * rhs);
+    }
+
+    const FVector2D operator*(const float& rhs) const {
+        return FVector2D(X * rhs, Y * rhs);
+    }
+
+    bool operator==(const FVector2D& rhs) {
+        return X == rhs.X && Y == rhs.Y;
+    }
+
+    const bool operator==(const FVector2D& rhs) const {
+        return X == rhs.X && Y == rhs.Y;
     }
 };
 

@@ -7,5 +7,7 @@ INT WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nC
 
     MyGame gameEngine(hInstance, 1920, 1080);
 
+    gameEngine.init();
+
     return gameEngine.run();
 }

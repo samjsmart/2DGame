@@ -89,6 +89,38 @@ void SimpleGameEngine::update(long lTimeElapsed) {}
 
 void SimpleGameEngine::draw() {}
 
+void SimpleGameEngine::init() {}
+
 bool SimpleGameEngine::isKeyPressed(int key) {
-    return GetKeyState(key) & 0x8000;
+    bool bPressed = GetKeyState(key) & 0x8000;
+
+    if (bPressed) {
+        tPreviousKeyPressTime = tPreviousTime;
+    }
+
+    return bPressed;
+}
+
+long SimpleGameEngine::timeSinceLastKeyPress() {
+    auto tNow = high_resolution_clock::now();
+    auto tDelta = std::chrono::duration_cast<std::chrono::milliseconds>(tNow - tPreviousKeyPressTime).count();
+    return (long)tDelta;
+}
+
+FVector2D SimpleGameEngine::getMousePosition() {
+    FVector2D position(0, 0);
+
+    POINT p;
+    if (!GetCursorPos(&p)) {
+        return position;
+    }
+
+    if (!ScreenToClient(pDraw->getHwnd(), &p)) {
+        return position;
+    }
+
+    position.X = p.x;
+    position.Y = p.y;
+
+    return position;
 }
