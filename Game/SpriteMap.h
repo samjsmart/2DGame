@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
 
-#include "Math.h"
-#include "Draw.h"
+#include "SimpleGameEngine/Math.h"
+#include "SimpleGameEngine/Draw.h"
 
 class SpriteMap
 {

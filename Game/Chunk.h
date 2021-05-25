@@ -3,6 +3,7 @@
 #include "Math.h"
 #include "Tile.h"
 
+#include "SimpleGameEngine/Math.h"
 
 class Chunk
 {

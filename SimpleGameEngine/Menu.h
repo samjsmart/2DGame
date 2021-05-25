@@ -19,7 +19,7 @@ class Menu
     SimpleGameEngine* pEngine;
     bool              bActive;
     int               iKey;
-    int               iFontSize = 20;
+    float             fFontSize = 20;
 
     std::map<std::wstring, Button> buttons;
 

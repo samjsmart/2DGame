@@ -41,8 +41,8 @@ void Draw::createD2D() {
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        resolution.X,
-        resolution.Y,
+        (int)resolution.X,
+        (int)resolution.Y,
         NULL,
         NULL,
         hInstance,
@@ -262,7 +262,7 @@ void Draw::drawBitmapPart(ID2D1Bitmap* pBitmap, FVector2D pt1, FVector2D size, D
 }
 
 
-IDWriteTextFormat* Draw::createTextFormat(std::wstring fontName, int fontSize) {
+IDWriteTextFormat* Draw::createTextFormat(std::wstring fontName, float fontSize) {
 
     IDWriteTextFormat* pTextFormat;
 

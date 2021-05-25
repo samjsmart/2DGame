@@ -46,7 +46,7 @@ class Draw {
 public:
     Draw(SimpleGameEngine* pEngine, HINSTANCE hInstance, WNDPROC wndProc, LPVOID lpParam, FVector2D resolution);
     ID2D1SolidColorBrush* createBrush(int r, int g, int b, float a = 1.0f);
-    IDWriteTextFormat* createTextFormat(std::wstring fontName, int fontSize);
+    IDWriteTextFormat* createTextFormat(std::wstring fontName, float fontSize);
     ID2D1Bitmap* loadBitmapFromFile(std::wstring path);
     HWND getHwnd();
     void drawLine(FVector2D pt1, FVector2D pt2, ID2D1SolidColorBrush* pBrush, float strokeWidth = 1.0f);

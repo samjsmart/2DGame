@@ -14,7 +14,7 @@ void Menu::draw() {
     auto background = pDraw->createBrush(125, 125, 125, 0.75f);
     auto buttonOff  = pDraw->createBrush(50, 50, 50);
     auto white      = pDraw->createBrush(255, 255, 255);
-    auto font       = pDraw->createTextFormat(L"Helvetica", iFontSize);
+    auto font       = pDraw->createTextFormat(L"Helvetica", fFontSize);
 
     pDraw->drawFilledRectangle(FVector2D(0, 0), pDraw->getScreenSize(), background);
 

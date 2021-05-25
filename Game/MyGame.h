@@ -6,10 +6,10 @@
 #include <algorithm>
 #include <mutex>
 
-#include "SimpleGameEngine.h"
+#include "SimpleGameEngine/SimpleGameEngine.h"
+#include "SimpleGameEngine/Menu.h"
 #include "Chunk.h"
 #include "SpriteMap.h"
-#include "Menu.h"
 
 class MyGame : public SimpleGameEngine
 {
