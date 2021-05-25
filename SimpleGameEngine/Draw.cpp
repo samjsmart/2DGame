@@ -1,20 +1,19 @@
 #include "Draw.h"
 
-Draw::Draw(HINSTANCE hInstance, WNDPROC wndProc, LPVOID lpParam, int iWidth, int iHeight) :
+Draw::Draw(SimpleGameEngine* pEngine, HINSTANCE hInstance, WNDPROC wndProc, LPVOID lpParam, FVector2D resolution) :
+    pEngine(pEngine),
+    hInstance(hInstance),
+    wndProc(wndProc),
+    lpParam(lpParam),
+    resolution(resolution),
     hWnd(NULL),
-    wndProc(NULL),
-    lpParam(NULL),
     pD2DFactory(NULL),
-    pRenderTarget(NULL) {
-    this->hInstance = hInstance;
-    this->wndProc   = wndProc;
-    this->lpParam   = lpParam;
-    this->iWidth    = iWidth;
-    this->iHeight   = iHeight;
-
+    pRenderTarget(NULL)
+{
     registerWindow();
     createD2D();
     createWICImagingFactory();
+    createIDWriteFactory();
 }
 
 void Draw::registerWindow() {
@@ -28,7 +27,7 @@ void Draw::registerWindow() {
     wndClassEx.hbrBackground = NULL;
     wndClassEx.lpszClassName = NULL;
     wndClassEx.hCursor       = LoadCursor(NULL, IDI_APPLICATION);
-    wndClassEx.lpszClassName = "My App";
+    wndClassEx.lpszClassName = L"My App";
 
     RegisterClassEx(&wndClassEx);
 }
@@ -37,13 +36,13 @@ void Draw::createD2D() {
     D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &this->pD2DFactory);
 
     hWnd = CreateWindow(
-        "My App",
-        "My Application",
+        L"My App",
+        L"My Application",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        iWidth,
-        iHeight,
+        resolution.X,
+        resolution.Y,
         NULL,
         NULL,
         hInstance,
@@ -73,6 +72,14 @@ void Draw::createWICImagingFactory() {
     );
 }
 
+void Draw::createIDWriteFactory() {
+    HRESULT hr = DWriteCreateFactory(
+        DWRITE_FACTORY_TYPE_SHARED,
+        __uuidof(pWriteFactory),
+        reinterpret_cast<IUnknown**>(&pWriteFactory)
+    );
+}
+
 void Draw::beginPaint() {
     pRenderTarget->BeginDraw();
     pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
@@ -83,10 +90,10 @@ void Draw::endPaint() {
     clearBrushes();
 }
 
-ID2D1SolidColorBrush* Draw::createBrush(int r, int g, int b) {
+ID2D1SolidColorBrush* Draw::createBrush(int r, int g, int b, float a) {
     ID2D1SolidColorBrush* brush;
 
-    pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(r / 255.0f, g / 255.0f, b / 255.0f), &brush);
+    pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(r / 255.0f, g / 255.0f, b / 255.0f, a), &brush);
     vBrushes.push_back(brush);
 
     return brush;
@@ -104,12 +111,12 @@ HWND Draw::getHwnd() {
     return hWnd;
 }
 
-void Draw::drawLine(float x1, float y1, float x2, float y2, ID2D1SolidColorBrush* pBrush) {
-    pRenderTarget->DrawLine(D2D1::Point2F(x1, y1), D2D1::Point2F(x2, y2), pBrush);
+void Draw::drawLine(float x1, float y1, float x2, float y2, ID2D1SolidColorBrush* pBrush, float strokeWidth) {
+    pRenderTarget->DrawLine(D2D1::Point2F(x1, y1), D2D1::Point2F(x2, y2), pBrush, strokeWidth);
 }
 
-void Draw::drawLine(FVector2D pt1, FVector2D pt2, ID2D1SolidColorBrush* pBrush) {
-    pRenderTarget->DrawLine(D2D1::Point2F(pt1.X, pt1.Y), D2D1::Point2F(pt2.X, pt2.Y), pBrush);
+void Draw::drawLine(FVector2D pt1, FVector2D pt2, ID2D1SolidColorBrush* pBrush, float strokeWidth) {
+    pRenderTarget->DrawLine(D2D1::Point2F(pt1.X, pt1.Y), D2D1::Point2F(pt2.X, pt2.Y), pBrush, strokeWidth);
 }
 
 void Draw::drawTriangle(FVector2D pt1, FVector2D pt2, FVector2D pt3, ID2D1SolidColorBrush* pBrush) {
@@ -123,6 +130,10 @@ void Draw::drawFilledTriangle(FVector2D pt1, FVector2D pt2, FVector2D pt3, ID2D1
     ID2D1GeometrySink* pSink;
 
     pD2DFactory->CreatePathGeometry(&pGeometry);
+
+    if (!pGeometry)
+        return;
+
     pGeometry->Open(&pSink);
 
     pSink->SetFillMode(D2D1_FILL_MODE_WINDING);
@@ -145,6 +156,10 @@ void Draw::drawFilledRectangle(FVector2D pt1, FVector2D pt2, ID2D1SolidColorBrus
     ID2D1GeometrySink* pSink;
 
     pD2DFactory->CreatePathGeometry(&pGeometry);
+
+    if (!pGeometry)
+        return;
+
     pGeometry->Open(&pSink);
 
     pSink->SetFillMode(D2D1_FILL_MODE_WINDING);
@@ -164,7 +179,7 @@ void Draw::drawFilledRectangle(FVector2D pt1, FVector2D pt2, ID2D1SolidColorBrus
     pGeometry->Release();
 }
 
-ID2D1Bitmap* Draw::loadBitmapFromFile(PCWSTR path) {
+ID2D1Bitmap* Draw::loadBitmapFromFile(std::wstring path) {
     IWICBitmapDecoder* pDecoder = NULL;
     IWICBitmapFrameDecode* pSource = NULL;
     IWICStream* pStream = NULL;
@@ -172,10 +187,8 @@ ID2D1Bitmap* Draw::loadBitmapFromFile(PCWSTR path) {
     IWICBitmapScaler* pScaler = NULL;
     ID2D1Bitmap* ppBitmap = NULL;
 
-    std::cout << "Loading Image" << std::endl;
-
     HRESULT hr = pWICImagingFactory->CreateDecoderFromFilename(
-        path,
+        path.c_str(),
         NULL,
         GENERIC_READ,
         WICDecodeMetadataCacheOnLoad,
@@ -186,13 +199,9 @@ ID2D1Bitmap* Draw::loadBitmapFromFile(PCWSTR path) {
         hr = pDecoder->GetFrame(0, &pSource);
     }
 
-    std::cout << "Decoder created" << std::endl;
-
     if (SUCCEEDED(hr)) {
         hr = pWICImagingFactory->CreateFormatConverter(&pConverter);
     }
-
-    std::cout << "Format converter created" << std::endl;
 
     if (SUCCEEDED(hr)) {
         hr = pConverter->Initialize(
@@ -205,8 +214,6 @@ ID2D1Bitmap* Draw::loadBitmapFromFile(PCWSTR path) {
         );
     }
 
-    std::cout << "Converter created" << std::endl;
-
     if (SUCCEEDED(hr)) {
         hr = pRenderTarget->CreateBitmapFromWicBitmap(
             pConverter,
@@ -214,8 +221,6 @@ ID2D1Bitmap* Draw::loadBitmapFromFile(PCWSTR path) {
             &ppBitmap
         );
     }
-
-    std::cout << "Bitmap created" << std::endl;
 
     SafeRelease(&pDecoder);
     SafeRelease(&pSource);
@@ -254,4 +259,62 @@ void Draw::drawBitmapPart(ID2D1Bitmap* pBitmap, FVector2D pt1, FVector2D size, D
         D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
         rect
     );
+}
+
+
+IDWriteTextFormat* Draw::createTextFormat(std::wstring fontName, int fontSize) {
+
+    IDWriteTextFormat* pTextFormat;
+
+    HRESULT hr = pWriteFactory->CreateTextFormat(
+        fontName.c_str(),
+        NULL,
+        DWRITE_FONT_WEIGHT_NORMAL,
+        DWRITE_FONT_STYLE_NORMAL,
+        DWRITE_FONT_STRETCH_NORMAL,
+        fontSize,
+        L"",
+        &pTextFormat
+    );
+
+    return SUCCEEDED(hr) ? pTextFormat : nullptr;
+}
+
+void Draw::drawText(std::wstring text, FVector2D pt1, IDWriteTextFormat* pTextFormat, ID2D1SolidColorBrush* pBrush) {
+    pRenderTarget->DrawTextW(
+        text.c_str(),
+        text.length(),
+        pTextFormat,
+        D2D1::RectF(pt1.X, pt1.Y, resolution.X, resolution.Y),
+        pBrush
+    );
+}
+
+FVector2D Draw::getScreenSize() {
+    return resolution;
+}
+
+FVector2D Draw::getTextSize(std::wstring text, FVector2D pt1, IDWriteTextFormat* textFormat) {
+    IDWriteTextLayout* textLayout;
+    DWRITE_TEXT_METRICS  metrics;
+    FVector2D ret(0, 0);
+
+    HRESULT hr = pWriteFactory->CreateTextLayout(
+        text.c_str(),
+        text.length(),
+        textFormat,
+        resolution.X, resolution.Y,
+        &textLayout
+    );
+
+    if (SUCCEEDED(hr)) {
+        hr = textLayout->GetMetrics(&metrics);
+    }
+
+    if (SUCCEEDED(hr)) {
+        ret.X = metrics.width;
+        ret.Y = metrics.height;
+    }
+
+    return ret;
 }

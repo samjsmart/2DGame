@@ -42,6 +42,12 @@
     <ClCompile Include="SpriteMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Chunk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Menu.cpp">
+      <Filter>Source Files\SimpleGameEngine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h">
@@ -67,6 +73,12 @@
     </ClInclude>
     <ClInclude Include="SpriteMap.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Chunk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Menu.h">
+      <Filter>Header Files\SimpleGameEngine</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

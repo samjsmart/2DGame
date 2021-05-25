@@ -159,6 +159,17 @@ struct FVector2D {
     const bool operator==(const FVector2D& rhs) const {
         return X == rhs.X && Y == rhs.Y;
     }
+
+    const FVector2D operator+(const int& rhs) const {
+        return FVector2D(X + rhs, Y + rhs);
+    }
+    const FVector2D operator-(const int& rhs) const {
+        return FVector2D(X - rhs, Y - rhs);
+    }
+
+    const FVector2D operator/(const int& rhs) const {
+        return FVector2D(X / rhs, Y / rhs);
+    }
 };
 
 struct FRotator2D {

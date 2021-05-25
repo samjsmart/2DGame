@@ -2,8 +2,8 @@
 
 SimpleGameEngine::SimpleGameEngine(HINSTANCE hInstance, int width, int height)
     : hInstance(hInstance) {
-    pDraw = new Draw(hInstance, wndProc, this, width, height);
-    pCamera = new Camera(FVector2D(0, 0));
+    pDraw = new Draw(this, hInstance, wndProc, this, FVector2D(width, height));
+    pCamera = new Camera(this, FVector2D(0, 0));
 }
 
 LRESULT CALLBACK SimpleGameEngine::wndProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
